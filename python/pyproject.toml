@@ -1,0 +1,19 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 German Aerospace Center (DLR)
+#
+
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "cmake>=3.10",
+    "scikit-build>=0.12",
+    "OCC",
+    "ninja"
+]
+
+build-backend = "setuptools.build_meta"
+
+[tool.isort]
+profile = "black"

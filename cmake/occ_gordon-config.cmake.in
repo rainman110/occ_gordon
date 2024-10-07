@@ -1,0 +1,13 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2018 German Aerospace Center (DLR)
+#
+
+# - Config file for the occ_gordon package
+# It defines the following variables
+include(CMakeFindDependencyMacro)
+
+find_dependency(OpenCASCADE)
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+include("${CMAKE_CURRENT_LIST_DIR}/occ_gordon-targets.cmake")

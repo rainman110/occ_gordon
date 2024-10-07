@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: 2024 German Aerospace Center (DLR)
+
+Sphinx==7.2.6
+sphinx-toolbox==3.5.0
+sphinx-copybutton==0.5.2
+breathe==4.35.0
+myst-parser==2.0.0

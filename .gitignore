@@ -1,0 +1,16 @@
+#
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: 2018 German Aerospace Center (DLR)
+#
+
+docs/html
+docs/doxygen
+/bin
+/build*
+*.pyc
+.vscode
+*.patch
+/.vs
+*CrashInfo*
+CMakeLists.txt.user
+CMakeUserPresets.json

@@ -1,0 +1,32 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 German Aerospace Center (DLR)
+#
+
+version = 1
+SPDX-PackageName = "occ_gordon"
+SPDX-PackageSupplier = "<>"
+
+[[annotations]]
+path = ["*.md"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 German Aerospace Center (DLR)"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["*.json"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 German Aerospace Center (DLR)"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["*docs/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 German Aerospace Center (DLR)"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["tests/unittests/**/**.mat", "tests/unittests/**/**.brep", "tests/unittests/**/**.stp", "tests/unittests/**/**.txt"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2018 German Aerospace Center (DLR)"
+SPDX-License-Identifier = "Apache-2.0"
