@@ -8,7 +8,7 @@ OCCT  lacks built-in support for __Gordon surface interpolation__, which is a me
 
 A curve network is a collection of interconnected curves that define the structural framework or "skeleton" of a surface or shape. By interpolating a curve network, complex surfaces can be accurately created.
 
-![Principle of Curve Network Interpolation](docs/images/gordon-principle.png)
+![Principle of Curve Network Interpolation](docs/images/gordon-principle.PNG)
 
 ## Key Features ⭐
 
