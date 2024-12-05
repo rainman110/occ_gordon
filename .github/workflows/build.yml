@@ -21,8 +21,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: ilammy/msvc-dev-cmd@v1 
-      - uses: lukka/get-cmake@latest
+      - uses: actions/checkout@v3
+      - name: Setup msvc compiler
+        if: startsWith(matrix.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install cmake
+        uses: lukka/get-cmake@latest
       - name: Install vcpkg
         uses: lukka/run-vcpkg@v11
 
