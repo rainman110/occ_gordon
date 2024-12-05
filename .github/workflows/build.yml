@@ -47,10 +47,7 @@ jobs:
         uses: lukka/run-vcpkg@v11
 
       - name: Configure CMake
-        run: cmake -S . -B ${{github.workspace}}/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install-${{ matrix.os }} \
-              -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }} -DVCPKG_HOST_TRIPLET=${{ matrix.vcpkg_triplet }} \
-              -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}"/scripts/buildsystems/vcpkg.cmake \
-              -G "Ninja Multi-Config"
+        run: cmake -S . -B ${{github.workspace}}/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install-${{ matrix.os }} -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }} -DVCPKG_HOST_TRIPLET=${{ matrix.vcpkg_triplet }} -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}"/scripts/buildsystems/vcpkg.cmake -G "Ninja Multi-Config"
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
