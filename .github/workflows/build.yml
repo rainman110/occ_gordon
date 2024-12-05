@@ -35,8 +35,14 @@ jobs:
       - name: Setup msvc compiler
         if: startsWith(matrix.os, 'windows')
         uses: ilammy/msvc-dev-cmd@v1
+        
+      - name: Install dependencies (linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt install apt install libxtst-dev '^libxcb.*-dev' libx11-xcb-dev libgl1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
+        
       - name: Install cmake
         uses: lukka/get-cmake@latest
+        
       - name: Install vcpkg
         uses: lukka/run-vcpkg@v11
 
