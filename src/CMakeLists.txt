@@ -4,6 +4,7 @@
 #
 # occ_gordon Library
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_library(occ_gordon_internal OBJECT
     internal/ApproxResult.h

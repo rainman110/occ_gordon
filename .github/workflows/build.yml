@@ -1,0 +1,73 @@
+# This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
+name: Build process
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-2019]
+        include:
+          - vcpkg_triplet: x64-windows
+            os: windows-2019
+          - vcpkg_triplet: x64-linux-dynamic
+            os: ubuntu-latest
+         
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
+      VCPKG_DEFAULT_HOST_TRIPLET: ${{ matrix.vcpkg_triplet }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup msvc compiler
+        if: startsWith(matrix.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
+        
+      - name: Install dependencies (linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt install libxtst-dev '^libxcb.*-dev' libx11-xcb-dev libgl1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
+        
+      - name: Install cmake
+        uses: lukka/get-cmake@latest
+        
+      - name: Install vcpkg
+        uses: lukka/run-vcpkg@v11
+
+      - name: Configure CMake
+        run: > 
+          cmake -S . -B ${{github.workspace}}/build 
+          -DBUILD_SHARED_LIBS=ON
+          -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install-${{ matrix.os }}
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
+          -DVCPKG_HOST_TRIPLET=${{ matrix.vcpkg_triplet }}
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}"/scripts/buildsystems/vcpkg.cmake
+          -G "Ninja Multi-Config"
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: occ_gordon-${{ matrix.os }}
+          path: ${{github.workspace}}/install-${{ matrix.os }}
+
+      #- name: Test
+      #  working-directory: ${{github.workspace}}/build
+      #  # Execute tests defined by the CMake configuration.
+      #  # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      #  run: ctest -C ${{env.BUILD_TYPE}}
+
