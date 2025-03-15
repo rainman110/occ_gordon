@@ -68,8 +68,6 @@ void InterpolateCurveNetwork::ComputeIntersections(math_Matrix& intersection_par
     const std::vector<Handle(Geom_BSplineCurve)>& profiles = m_profiles;
     const std::vector<Handle(Geom_BSplineCurve)>& guides = m_guides;
     
-    bool fail = false;
-
     for (int spline_u_idx = 0; spline_u_idx < static_cast<int>(profiles.size()); ++spline_u_idx) {
         for (int spline_v_idx = 0; spline_v_idx < static_cast<int>(guides.size()); ++spline_v_idx) {
             std::vector<std::pair<double, double> > currentIntersections = BSplineAlgorithms::intersections(profiles[static_cast<size_t>(spline_u_idx)],
@@ -77,13 +75,21 @@ void InterpolateCurveNetwork::ComputeIntersections(math_Matrix& intersection_par
                                                                                                                  m_spatialTol);
 
             if (currentIntersections.size() < 1) {
-                fail = true;
+                throw error("U-directional B-spline and v-directional B-spline don't intersect each other!");
             }
 
             else if (currentIntersections.size() == 1) {
                 intersection_params_u(spline_u_idx, spline_v_idx) = currentIntersections[0].first;
                 intersection_params_v(spline_u_idx, spline_v_idx) = currentIntersections[0].second;
             }
+
+			// NB: We couldn't handle closed curves here, because we did't know vhat profile/guide intesect in lowest parameter and 
+			// there is no way to let API user know it upfront. So we will handle it later
+			// Commented code below was working fine anly if curves passed to API were already sorte in correct order 
+			// and first curve in profiles was intersecting guide in a smallest parameter value
+
+            /*
+
                 // for closed curves
             else if (currentIntersections.size() == 2) {
 
@@ -121,13 +127,12 @@ void InterpolateCurveNetwork::ComputeIntersections(math_Matrix& intersection_par
             }
 
             else if (currentIntersections.size() > 2) {
+
+            */
+            else{
                 throw error("U-directional B-spline and v-directional B-spline have more than two intersections with each other!");
             }
         }
-    }
-
-    if (fail) {
-        throw error("U-directional B-spline and v-directional B-spline don't intersect each other!");
     }
 }
 
@@ -170,15 +175,77 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
     int nGuides = static_cast<int>(m_guides.size());
     int nProfiles = static_cast<int>(m_profiles.size());
     // now find all intersections of all B-splines with each other
-    math_Matrix intersection_params_u(0, nProfiles - 1,
+    math_Matrix tmp_intersection_params_u(0, nProfiles - 1,
                                       0, nGuides - 1);
-    math_Matrix intersection_params_v(0, nProfiles - 1,
+    math_Matrix tmp_intersection_params_v(0, nProfiles - 1,
                                       0, nGuides - 1);
-
-    ComputeIntersections(intersection_params_u, intersection_params_v);
+    // closed profiles/guides should not be handled by this method
+    // see details inside
+    ComputeIntersections(tmp_intersection_params_u, tmp_intersection_params_v);
 
     // sort intersection_params_u and intersection_params_v and u-directional and v-directional B-spline curves
-    SortCurves(intersection_params_u, intersection_params_v);
+    SortCurves(tmp_intersection_params_u, tmp_intersection_params_v);
+
+    // Need to check if profiles are closed curves
+    // and if so - duplicate 1st guide at the end of guides array and fix intersection matrix
+    // we know that parametrization for all profiles are the same, so it's safe to check only first
+    // one
+    // Do it here, because now we have sorted collections and we clearly know where first intersection is
+    auto isClosedProfile = m_profiles.front()->IsClosed() || m_profiles.front()->IsPeriodic();
+    auto isClosedGuides = m_guides.front()->IsClosed() || m_guides.front()->IsPeriodic();
+
+    math_Matrix intersection_params_u(0, isClosedGuides ? nProfiles : nProfiles - 1,
+        0, isClosedProfile ? nGuides : nGuides - 1);
+    math_Matrix intersection_params_v(0, isClosedGuides ? nProfiles : nProfiles - 1,
+        0, isClosedProfile ? nGuides : nGuides - 1);
+
+    if (isClosedProfile) {
+        m_guides.push_back(m_guides.front());
+        ++nGuides;
+
+        // profiles
+        for (int spline_u_idx = 0; spline_u_idx < nProfiles; ++spline_u_idx) {
+            // guides
+            for (int spline_v_idx = 0; spline_v_idx < nGuides - 1; ++spline_v_idx) {
+                intersection_params_u(spline_u_idx, spline_v_idx) =
+                    tmp_intersection_params_u(spline_u_idx, spline_v_idx);
+                intersection_params_v(spline_u_idx, spline_v_idx) =
+                    tmp_intersection_params_v(spline_u_idx, spline_v_idx);
+            }
+            intersection_params_u(spline_u_idx, nGuides - 1) =
+                tmp_intersection_params_u(spline_u_idx, 0) < 1e-5   // intersection at 0.0 should be handled differently
+				? 1.0                                               // for algorithm to be working properly
+				: tmp_intersection_params_u(spline_u_idx, 0);       // so we just set it to 1.0 if it's 0.0 in other cases we just copy the value
+            intersection_params_v(spline_u_idx, nGuides - 1) =
+                tmp_intersection_params_v(spline_u_idx, 0);
+        }
+    }
+    else if (isClosedGuides) {
+        m_profiles.push_back(m_profiles.front());
+        ++nProfiles;
+
+        for (int spline_v_idx = 0; spline_v_idx < nGuides; ++spline_v_idx) {
+            for (int spline_u_idx = 0; spline_u_idx < nProfiles - 1; ++spline_u_idx) {
+                intersection_params_u(spline_u_idx, spline_v_idx) =
+                    tmp_intersection_params_u(spline_u_idx, spline_v_idx);
+                intersection_params_v(spline_u_idx, spline_v_idx) =
+                    tmp_intersection_params_v(spline_u_idx, spline_v_idx);
+            }
+            intersection_params_u(nProfiles - 1, spline_v_idx) =
+                tmp_intersection_params_u(0, spline_v_idx);
+            intersection_params_v(nProfiles - 1, spline_v_idx) =
+                tmp_intersection_params_v(0, spline_v_idx) < 1e-5   // intersection at 0.0 should be handled differently
+				? 1.0   								            // for algorithm to be working properly  
+				: tmp_intersection_params_v(0, spline_v_idx);	    // so we just set it to 1.0 if it's 0.0 in other cases we just copy the value
+        }
+    }
+    else
+    {
+		// if none of the curves are closed, just copy the intersection matrices
+        // if both profiles and guides are closed it's a corner case not supported for now
+        intersection_params_u = tmp_intersection_params_u;
+        intersection_params_v = tmp_intersection_params_v;
+    }
 
     // eliminate small inaccuracies of the intersection parameters:
     EliminateInaccuraciesNetworkIntersections(m_profiles, m_guides, intersection_params_u, intersection_params_v);
