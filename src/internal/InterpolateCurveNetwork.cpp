@@ -82,12 +82,12 @@ void InterpolateCurveNetwork::ComputeIntersections(math_Matrix& intersection_par
                 intersection_params_u(spline_u_idx, spline_v_idx) = currentIntersections[0].first;
                 intersection_params_v(spline_u_idx, spline_v_idx) = currentIntersections[0].second;
             }
-
-			// NB: We couldn't handle closed curves here, because we did't know vhat profile/guide intesect in lowest parameter and 
-			// there is no way to let API user know it upfront. So we will handle it later
-			// Commented code below was working fine anly if curves passed to API were already sorte in correct order 
-			// and first curve in profiles was intersecting guide in a smallest parameter value
-
+            else if (currentIntersections.size() == 2) {
+                // NB: We couldn't handle closed curves here, because we did't know vhat profile/guide intesect in lowest parameter and 
+                // there is no way to let API user know it upfront. So we will handle it later
+                // Commented code below was working fine anly if curves passed to API were already sorte in correct order 
+                // and first curve in profiles was intersecting guide in a smallest parameter value
+            }
             /*
 
                 // for closed curves
