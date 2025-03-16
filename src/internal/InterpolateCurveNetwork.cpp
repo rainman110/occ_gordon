@@ -34,9 +34,9 @@ T Clamp(T val, T min, T max)
     return std::max(min, std::min(val, max));
 }
 
-InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle (Geom_Curve)> &profiles,
-                                                           const std::vector<Handle (Geom_Curve)> &guides,
-                                                           double spatialTol)
+InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_Curve)>& profiles,
+    const std::vector<Handle(Geom_Curve)>& guides,
+    double spatialTol)
     : m_hasPerformed(false)
     , m_spatialTol(spatialTol)
 {
@@ -45,37 +45,87 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle (Geom_
         throw error("There must be at least two profiles for the curve network interpolation.", MATH_ERROR);
     }
 
-    if (guides.size()  < 2) {
+    if (guides.size() < 2) {
         throw error("There must be at least two guides for the curve network interpolation.", MATH_ERROR);
     }
-    
-    m_profiles.reserve(profiles.size());
-    m_guides.reserve(guides.size());
+
+    // remove duplicates from profiles and guides
+    // we need it to build correct intersection matrix
+    // Here we checking only first point of the curve to find duplicates
+    // it should be enough, since surface closed in both U and V not supported by algorithm
+    // if profiles or guides are closed curves, we will add the first curve at the end later
+    // after sorting the intersection matrix
+    std::vector<Handle(Geom_Curve)> uniqueProfiles;
+    for (const auto& profile : profiles) {
+        bool isDuplicate = false;
+        for (const auto& uniqueProfile : uniqueProfiles) {
+            if (profile->Value(profile->FirstParameter()).IsEqual(uniqueProfile->Value(uniqueProfile->FirstParameter()), Precision::Confusion())) {
+                isDuplicate = true;
+                break;
+            }
+        }
+        if (!isDuplicate) {
+            uniqueProfiles.push_back(profile);
+        }
+    }
+
+    std::vector<Handle(Geom_Curve)> uniqueGuides;
+    for (const auto& guide : guides) {
+        bool isDuplicate = false;
+        for (const auto& uniqueGuide : uniqueGuides) {
+            if (guide->Value(guide->FirstParameter()).IsEqual(uniqueGuide->Value(uniqueGuide->FirstParameter()), Precision::Confusion())) {
+                isDuplicate = true;
+                break;
+            }
+        }
+        if (!isDuplicate) {
+            uniqueGuides.push_back(guide);
+        }
+    }
+
+    // check whether there are any u-directional and v-directional B-splines in the vectors
+    if (uniqueProfiles.size() < 2) {
+        throw error(
+            "There must be at least two unique profiles for the curve network interpolation.",
+            MATH_ERROR);
+    }
+
+    if (uniqueGuides.size() < 2) {
+        throw error("There must be at least two unique guides for the curve network interpolation.",
+            MATH_ERROR);
+    }
+
+    m_profiles.reserve(uniqueProfiles.size());
+    m_guides.reserve(uniqueGuides.size());
 
     // Copy the curves
-    for (std::vector<Handle (Geom_Curve)>::const_iterator it = profiles.begin(); it != profiles.end(); ++it) {
+    for (std::vector<Handle(Geom_Curve)>::const_iterator it = uniqueProfiles.begin();
+        it != uniqueProfiles.end();
+        ++it) {
         m_profiles.push_back(GeomConvert::CurveToBSplineCurve(*it));
     }
-    for (std::vector<Handle (Geom_Curve)>::const_iterator it = guides.begin(); it != guides.end(); ++it) {
+    for (std::vector<Handle(Geom_Curve)>::const_iterator it = uniqueGuides.begin();
+        it != uniqueGuides.end();
+        ++it) {
         m_guides.push_back(GeomConvert::CurveToBSplineCurve(*it));
     }
 }
 
 
 void InterpolateCurveNetwork::ComputeIntersections(math_Matrix& intersection_params_u,
-                                                        math_Matrix& intersection_params_v) const
+    math_Matrix& intersection_params_v) const
 {
     const std::vector<Handle(Geom_BSplineCurve)>& profiles = m_profiles;
     const std::vector<Handle(Geom_BSplineCurve)>& guides = m_guides;
-    
+
     for (int spline_u_idx = 0; spline_u_idx < static_cast<int>(profiles.size()); ++spline_u_idx) {
         for (int spline_v_idx = 0; spline_v_idx < static_cast<int>(guides.size()); ++spline_v_idx) {
             std::vector<std::pair<double, double> > currentIntersections = BSplineAlgorithms::intersections(profiles[static_cast<size_t>(spline_u_idx)],
-                                                                                                                 guides[static_cast<size_t>(spline_v_idx)],
-                                                                                                                 m_spatialTol);
-
+                guides[static_cast<size_t>(spline_v_idx)],
+                m_spatialTol);
             if (currentIntersections.size() < 1) {
-                throw error("U-directional B-spline and v-directional B-spline don't intersect each other!");
+                throw error("U-directional B-spline and V-directional B-spline don't intersect "
+                    "each other!");
             }
 
             else if (currentIntersections.size() == 1) {
@@ -83,58 +133,18 @@ void InterpolateCurveNetwork::ComputeIntersections(math_Matrix& intersection_par
                 intersection_params_v(spline_u_idx, spline_v_idx) = currentIntersections[0].second;
             }
             else if (currentIntersections.size() == 2) {
-                // NB: We couldn't handle closed curves here, because we did't know vhat profile/guide intesect in lowest parameter and 
-                // there is no way to let API user know it upfront. So we will handle it later
-                // Commented code below was working fine anly if curves passed to API were already sorte in correct order 
-                // and first curve in profiles was intersecting guide in a smallest parameter value
-
-                // Use first intersection here - should be pretty safe to do so
-                intersection_params_u(spline_u_idx, spline_v_idx) = currentIntersections[0].first;
-                intersection_params_v(spline_u_idx, spline_v_idx) = currentIntersections[0].second;
-            }
-            /*
-
-                // for closed curves
-            else if (currentIntersections.size() == 2) {
-
-                // only the u-directional B-spline curves are closed
-                if (profiles[0]->IsClosed()) {
-
-                    if (spline_v_idx == 0) {
-                        intersection_params_u(spline_u_idx, spline_v_idx) = std::min(currentIntersections[0].first, currentIntersections[1].first);
-                    }
-                    else if (spline_v_idx == static_cast<int>(guides.size() - 1)) {
-                        intersection_params_u(spline_u_idx, spline_v_idx) = std::max(currentIntersections[0].first, currentIntersections[1].first);
-                    }
-
-                    // intersection_params_vector[0].second == intersection_params_vector[1].second
-                    intersection_params_v(spline_u_idx, spline_v_idx) = currentIntersections[0].second;
-                }
-
-                // only the v-directional B-spline curves are closed
-                if (guides[0]->IsClosed()) {
-
-                    if (spline_u_idx == 0) {
-                        intersection_params_v(spline_u_idx, spline_v_idx) = std::min(currentIntersections[0].second, currentIntersections[1].second);
-                    }
-                    else if (spline_u_idx == static_cast<int>(profiles.size() - 1)) {
-                        intersection_params_v(spline_u_idx, spline_v_idx) = std::max(currentIntersections[0].second, currentIntersections[1].second);
-                    }
-                    // intersection_params_vector[0].first == intersection_params_vector[1].first
-                    intersection_params_u(spline_u_idx, spline_v_idx) = currentIntersections[0].first;
-                }
-
-//                // TODO: both u-directional splines and v-directional splines are closed
-//               else if (intersection_params_vector.size() == 4) {
-
-//                }
+                // for closed curves we will get 2 intersections
+                // take the smaller one - we will add duplicate curve at the end
+                // later, after sorting the intersection matrix
+                intersection_params_u(spline_u_idx, spline_v_idx) =
+                    std::min(currentIntersections[0].first, currentIntersections[1].first);
+                intersection_params_v(spline_u_idx, spline_v_idx) =
+                    std::min(currentIntersections[0].second, currentIntersections[1].second);
             }
 
             else if (currentIntersections.size() > 2) {
-
-            */
-            else{
-                throw error("U-directional B-spline and v-directional B-spline have more than two intersections with each other!");
+                throw error("U-directional B-spline and V-directional B-spline have more than two intersections with each other! "
+                    "Closed in bot U and V directions surface isn't supported at this time");
             }
         }
     }
@@ -183,8 +193,9 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
                                       0, nGuides - 1);
     math_Matrix tmp_intersection_params_v(0, nProfiles - 1,
                                       0, nGuides - 1);
-    // closed profiles/guides should not be handled by this method
-    // see details inside
+    // closed profiles/guides should not be handled by this method ideally
+	// it will only work if first profile/guide intersects with guide/profile at it's lowest parameter
+    // We cover case when curves alredy somewhat sorted and for closed profiles we already have 1 additional guide
     ComputeIntersections(tmp_intersection_params_u, tmp_intersection_params_v);
 
     // sort intersection_params_u and intersection_params_v and u-directional and v-directional B-spline curves
@@ -192,16 +203,19 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
 
     // Need to check if profiles are closed curves
     // and if so - duplicate 1st guide at the end of guides array and fix intersection matrix
-    // we know that parametrization for all profiles are the same, so it's safe to check only first
-    // one
-    // Do it here, because now we have sorted collections and we clearly know where first intersection is
+    // we know that parametrization for all profiles are the same, it's safe to check only first one
+    // at this point that there are no duplicates and minimum parameter was used for intersection
     auto isClosedProfile = m_profiles.front()->IsClosed() || m_profiles.front()->IsPeriodic();
     auto isClosedGuides = m_guides.front()->IsClosed() || m_guides.front()->IsPeriodic();
 
-    math_Matrix intersection_params_u(0, isClosedGuides ? nProfiles : nProfiles - 1,
-        0, isClosedProfile ? nGuides : nGuides - 1);
-    math_Matrix intersection_params_v(0, isClosedGuides ? nProfiles : nProfiles - 1,
-        0, isClosedProfile ? nGuides : nGuides - 1);
+    math_Matrix intersection_params_u(0,
+        isClosedGuides ? nProfiles : nProfiles - 1,
+        0,
+        isClosedProfile ? nGuides : nGuides - 1);
+    math_Matrix intersection_params_v(0,
+        isClosedGuides ? nProfiles : nProfiles - 1,
+        0,
+        isClosedProfile ? nGuides : nGuides - 1);
 
     if (isClosedProfile) {
         m_guides.push_back(m_guides.front());
@@ -217,9 +231,10 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
                     tmp_intersection_params_v(spline_u_idx, spline_v_idx);
             }
             intersection_params_u(spline_u_idx, nGuides - 1) =
-                tmp_intersection_params_u(spline_u_idx, 0) < 1e-5   // intersection at 0.0 should be handled differently
-				? 1.0                                               // for algorithm to be working properly
-				: tmp_intersection_params_u(spline_u_idx, 0);       // so we just set it to 1.0 if it's 0.0 in other cases we just copy the value
+                tmp_intersection_params_u(spline_u_idx, 0) < m_spatialTol
+                ? 1.0
+                : tmp_intersection_params_u(spline_u_idx, 0);
+
             intersection_params_v(spline_u_idx, nGuides - 1) =
                 tmp_intersection_params_v(spline_u_idx, 0);
         }
@@ -238,15 +253,13 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
             intersection_params_u(nProfiles - 1, spline_v_idx) =
                 tmp_intersection_params_u(0, spline_v_idx);
             intersection_params_v(nProfiles - 1, spline_v_idx) =
-                tmp_intersection_params_v(0, spline_v_idx) < 1e-5   // intersection at 0.0 should be handled differently
-				? 1.0   								            // for algorithm to be working properly  
-				: tmp_intersection_params_v(0, spline_v_idx);	    // so we just set it to 1.0 if it's 0.0 in other cases we just copy the value
+                tmp_intersection_params_v(0, spline_v_idx) < m_spatialTol
+                ? 1.0
+                : tmp_intersection_params_v(0, spline_v_idx);
         }
     }
     else
     {
-		// if none of the curves are closed, just copy the intersection matrices
-        // if both profiles and guides are closed it's a corner case not supported for now
         intersection_params_u = tmp_intersection_params_u;
         intersection_params_v = tmp_intersection_params_v;
     }
@@ -272,7 +285,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         newParametersGuides.push_back(sum / nGuides);
     }
 
-    if (newParametersProfiles.front() > 1e-5 || newParametersGuides.front() > 1e-5) {
+    if (newParametersProfiles.front() > m_spatialTol || newParametersGuides.front() > m_spatialTol) {
         throw error("At least one B-splines has no intersection at the beginning.");
     }
 
@@ -309,20 +322,20 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         // eliminate small inaccuracies at the first knot
-        if (std::abs(oldParametersProfile.front()) < 1e-5) {
+        if (std::abs(oldParametersProfile.front()) < m_spatialTol) {
             oldParametersProfile.front() = 0;
         }
 
-        if (std::abs(newParametersProfiles.front()) < 1e-5) {
+        if (std::abs(newParametersProfiles.front()) < m_spatialTol) {
             newParametersProfiles.front() = 0;
         }
 
         // eliminate small inaccuracies at the last knot
-        if (std::abs(oldParametersProfile.back() - 1) < 1e-5) {
+        if (std::abs(oldParametersProfile.back() - 1) < m_spatialTol) {
             oldParametersProfile.back() = 1;
         }
 
-        if (std::abs(newParametersProfiles.back() - 1) < 1e-5) {
+        if (std::abs(newParametersProfiles.back() - 1) < m_spatialTol) {
             newParametersProfiles.back() = 1;
         }
 
@@ -339,20 +352,20 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         // eliminate small inaccuracies at the first knot
-        if (std::abs(oldParameterGuide.front()) < 1e-5) {
+        if (std::abs(oldParameterGuide.front()) < m_spatialTol) {
             oldParameterGuide.front() = 0;
         }
 
-        if (std::abs(newParametersGuides.front()) < 1e-5) {
+        if (std::abs(newParametersGuides.front()) < m_spatialTol) {
             newParametersGuides.front() = 0;
         }
 
         // eliminate small inaccuracies at the last knot
-        if (std::abs(oldParameterGuide.back() - 1) < 1e-5) {
+        if (std::abs(oldParameterGuide.back() - 1) < m_spatialTol) {
             oldParameterGuide.back() = 1;
         }
 
-        if (std::abs(newParametersGuides.back() - 1) < 1e-5) {
+        if (std::abs(newParametersGuides.back() - 1) < m_spatialTol) {
             newParametersGuides.back() = 1;
         }
 
