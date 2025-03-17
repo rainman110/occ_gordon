@@ -34,9 +34,21 @@ T Clamp(T val, T min, T max)
     return std::max(min, std::min(val, max));
 }
 
+bool curvesAreSame(Handle(Geom_Curve) curve1, Handle(Geom_Curve) curve2)
+{
+    gp_Pnt first = curve1->Value(curve1->FirstParameter());
+
+    if (first.IsEqual(curve2->Value(curve2->FirstParameter()), Precision::Confusion()) ||
+        first.IsEqual(curve2->Value(curve2->LastParameter()), Precision::Confusion())) {
+        return true;
+    }
+
+    return false;
+}
+
 InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_Curve)>& profiles,
-    const std::vector<Handle(Geom_Curve)>& guides,
-    double spatialTol)
+                                                            const std::vector<Handle(Geom_Curve)>& guides,
+                                                            double spatialTol)
     : m_hasPerformed(false)
     , m_spatialTol(spatialTol)
 {
@@ -59,7 +71,7 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_C
     for (const auto& profile : profiles) {
         bool isDuplicate = false;
         for (const auto& uniqueProfile : uniqueProfiles) {
-            if (profile->Value(profile->FirstParameter()).IsEqual(uniqueProfile->Value(uniqueProfile->FirstParameter()), Precision::Confusion())) {
+            if (curvesAreSame(profile, uniqueProfile)) {
                 isDuplicate = true;
                 break;
             }
@@ -73,7 +85,7 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_C
     for (const auto& guide : guides) {
         bool isDuplicate = false;
         for (const auto& uniqueGuide : uniqueGuides) {
-            if (guide->Value(guide->FirstParameter()).IsEqual(uniqueGuide->Value(uniqueGuide->FirstParameter()), Precision::Confusion())) {
+            if (curvesAreSame(guide, uniqueGuide)) {
                 isDuplicate = true;
                 break;
             }
@@ -189,10 +201,9 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
     int nGuides = static_cast<int>(m_guides.size());
     int nProfiles = static_cast<int>(m_profiles.size());
     // now find all intersections of all B-splines with each other
-    math_Matrix tmp_intersection_params_u(0, nProfiles - 1,
-                                      0, nGuides - 1);
-    math_Matrix tmp_intersection_params_v(0, nProfiles - 1,
-                                      0, nGuides - 1);
+    math_Matrix tmp_intersection_params_u(0, nProfiles - 1, 0, nGuides - 1);
+    math_Matrix tmp_intersection_params_v(0, nProfiles - 1, 0, nGuides - 1);
+
     // closed profiles/guides should not be handled by this method ideally
 	// it will only work if first profile/guide intersects with guide/profile at it's lowest parameter
     // We cover case when curves alredy somewhat sorted and for closed profiles we already have 1 additional guide
@@ -208,14 +219,10 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
     auto isClosedProfile = m_profiles.front()->IsClosed() || m_profiles.front()->IsPeriodic();
     auto isClosedGuides = m_guides.front()->IsClosed() || m_guides.front()->IsPeriodic();
 
-    math_Matrix intersection_params_u(0,
-        isClosedGuides ? nProfiles : nProfiles - 1,
-        0,
-        isClosedProfile ? nGuides : nGuides - 1);
-    math_Matrix intersection_params_v(0,
-        isClosedGuides ? nProfiles : nProfiles - 1,
-        0,
-        isClosedProfile ? nGuides : nGuides - 1);
+    math_Matrix intersection_params_u(0, isClosedGuides ? nProfiles : nProfiles - 1, 
+        0, isClosedProfile ? nGuides : nGuides - 1);
+    math_Matrix intersection_params_v(0, isClosedGuides ? nProfiles : nProfiles - 1,
+        0, isClosedProfile ? nGuides : nGuides - 1);
 
     if (isClosedProfile) {
         m_guides.push_back(m_guides.front());
@@ -231,7 +238,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
                     tmp_intersection_params_v(spline_u_idx, spline_v_idx);
             }
             intersection_params_u(spline_u_idx, nGuides - 1) =
-                tmp_intersection_params_u(spline_u_idx, 0) < m_spatialTol
+				tmp_intersection_params_u(spline_u_idx, 0) < Precision::Intersection() // actually 1e-5
                 ? 1.0
                 : tmp_intersection_params_u(spline_u_idx, 0);
 
@@ -253,7 +260,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
             intersection_params_u(nProfiles - 1, spline_v_idx) =
                 tmp_intersection_params_u(0, spline_v_idx);
             intersection_params_v(nProfiles - 1, spline_v_idx) =
-                tmp_intersection_params_v(0, spline_v_idx) < m_spatialTol
+                tmp_intersection_params_v(0, spline_v_idx) < Precision::Intersection() // actually 1e-5
                 ? 1.0
                 : tmp_intersection_params_v(0, spline_v_idx);
         }
@@ -285,7 +292,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         newParametersGuides.push_back(sum / nGuides);
     }
 
-    if (newParametersProfiles.front() > m_spatialTol || newParametersGuides.front() > m_spatialTol) {
+    if (newParametersProfiles.front() > Precision::Intersection() || newParametersGuides.front() > Precision::Intersection()) {
         throw error("At least one B-splines has no intersection at the beginning.");
     }
 
@@ -322,20 +329,20 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         // eliminate small inaccuracies at the first knot
-        if (std::abs(oldParametersProfile.front()) < m_spatialTol) {
+        if (std::abs(oldParametersProfile.front()) < Precision::Intersection()) {
             oldParametersProfile.front() = 0;
         }
 
-        if (std::abs(newParametersProfiles.front()) < m_spatialTol) {
+        if (std::abs(newParametersProfiles.front()) < Precision::Intersection()) {
             newParametersProfiles.front() = 0;
         }
 
         // eliminate small inaccuracies at the last knot
-        if (std::abs(oldParametersProfile.back() - 1) < m_spatialTol) {
+        if (std::abs(oldParametersProfile.back() - 1) < Precision::Intersection()) {
             oldParametersProfile.back() = 1;
         }
 
-        if (std::abs(newParametersProfiles.back() - 1) < m_spatialTol) {
+        if (std::abs(newParametersProfiles.back() - 1) < Precision::Intersection()) {
             newParametersProfiles.back() = 1;
         }
 
@@ -352,20 +359,20 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         // eliminate small inaccuracies at the first knot
-        if (std::abs(oldParameterGuide.front()) < m_spatialTol) {
+        if (std::abs(oldParameterGuide.front()) < Precision::Intersection()) {
             oldParameterGuide.front() = 0;
         }
 
-        if (std::abs(newParametersGuides.front()) < m_spatialTol) {
+        if (std::abs(newParametersGuides.front()) < Precision::Intersection()) {
             newParametersGuides.front() = 0;
         }
 
         // eliminate small inaccuracies at the last knot
-        if (std::abs(oldParameterGuide.back() - 1) < m_spatialTol) {
+        if (std::abs(oldParameterGuide.back() - 1) < Precision::Intersection()) {
             oldParameterGuide.back() = 1;
         }
 
-        if (std::abs(newParametersGuides.back() - 1) < m_spatialTol) {
+        if (std::abs(newParametersGuides.back() - 1) < Precision::Intersection()) {
             newParametersGuides.back() = 1;
         }
 
