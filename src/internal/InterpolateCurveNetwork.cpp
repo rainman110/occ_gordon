@@ -35,7 +35,7 @@ T Clamp(T val, T min, T max)
 }
 
 /**
- * @brief Checks that ends of 2 curves not sharing same point
+ * @brief Checks that ends of 2 curves are sharing same point
  *
  * @param curve1 first curve
  * @param curve2 second curve
