@@ -34,6 +34,12 @@ T Clamp(T val, T min, T max)
     return std::max(min, std::min(val, max));
 }
 
+/**
+ * @brief Checks that ends of 2 curves not sharing same point
+ *
+ * @param curve1 first curve
+ * @param curve2 second curve
+ */
 bool curvesAreSame(Handle(Geom_Curve) curve1, Handle(Geom_Curve) curve2)
 {
     gp_Pnt first = curve1->Value(curve1->FirstParameter());
