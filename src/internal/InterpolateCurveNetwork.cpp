@@ -247,7 +247,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
                     tmp_intersection_params_v(spline_u_idx, spline_v_idx);
             }
             intersection_params_u(spline_u_idx, nGuides - 1) =
-				tmp_intersection_params_u(spline_u_idx, 0) < Precision::Intersection() // actually 1e-5
+				tmp_intersection_params_u(spline_u_idx, 0) < Precision::Approximation() // actually 1e-6
                 ? 1.0
                 : tmp_intersection_params_u(spline_u_idx, 0);
 
@@ -269,7 +269,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
             intersection_params_u(nProfiles - 1, spline_v_idx) =
                 tmp_intersection_params_u(0, spline_v_idx);
             intersection_params_v(nProfiles - 1, spline_v_idx) =
-                tmp_intersection_params_v(0, spline_v_idx) < Precision::Intersection() // actually 1e-5
+                tmp_intersection_params_v(0, spline_v_idx) < Precision::Approximation() // actually 1e-6
                 ? 1.0
                 : tmp_intersection_params_v(0, spline_v_idx);
         }
@@ -301,7 +301,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         newParametersGuides.push_back(sum / nGuides);
     }
 
-    if (newParametersProfiles.front() > Precision::Intersection() || newParametersGuides.front() > Precision::Intersection()) {
+    if (newParametersProfiles.front() > Precision::Approximation() || newParametersGuides.front() > Precision::Approximation()) {
         throw error("At least one B-splines has no intersection at the beginning.");
     }
 
@@ -338,20 +338,20 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         // eliminate small inaccuracies at the first knot
-        if (std::abs(oldParametersProfile.front()) < Precision::Intersection()) {
+        if (std::abs(oldParametersProfile.front()) < Precision::Approximation()) {
             oldParametersProfile.front() = 0;
         }
 
-        if (std::abs(newParametersProfiles.front()) < Precision::Intersection()) {
+        if (std::abs(newParametersProfiles.front()) < Precision::Approximation()) {
             newParametersProfiles.front() = 0;
         }
 
         // eliminate small inaccuracies at the last knot
-        if (std::abs(oldParametersProfile.back() - 1) < Precision::Intersection()) {
+        if (std::abs(oldParametersProfile.back() - 1) < Precision::Approximation()) {
             oldParametersProfile.back() = 1;
         }
 
-        if (std::abs(newParametersProfiles.back() - 1) < Precision::Intersection()) {
+        if (std::abs(newParametersProfiles.back() - 1) < Precision::Approximation()) {
             newParametersProfiles.back() = 1;
         }
 
@@ -368,20 +368,20 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         // eliminate small inaccuracies at the first knot
-        if (std::abs(oldParameterGuide.front()) < Precision::Intersection()) {
+        if (std::abs(oldParameterGuide.front()) < Precision::Approximation()) {
             oldParameterGuide.front() = 0;
         }
 
-        if (std::abs(newParametersGuides.front()) < Precision::Intersection()) {
+        if (std::abs(newParametersGuides.front()) < Precision::Approximation()) {
             newParametersGuides.front() = 0;
         }
 
         // eliminate small inaccuracies at the last knot
-        if (std::abs(oldParameterGuide.back() - 1) < Precision::Intersection()) {
+        if (std::abs(oldParameterGuide.back() - 1) < Precision::Approximation()) {
             oldParameterGuide.back() = 1;
         }
 
-        if (std::abs(newParametersGuides.back() - 1) < Precision::Intersection()) {
+        if (std::abs(newParametersGuides.back() - 1) < Precision::Approximation()) {
             newParametersGuides.back() = 1;
         }
 
