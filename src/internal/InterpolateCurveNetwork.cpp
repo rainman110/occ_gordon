@@ -43,9 +43,12 @@ T Clamp(T val, T min, T max)
 bool curvesAreSame(Handle(Geom_Curve) curve1, Handle(Geom_Curve) curve2)
 {
     gp_Pnt first = curve1->Value(curve1->FirstParameter());
+    gp_Pnt second = curve1->Value(curve1->LastParameter());
 
-    if (first.IsEqual(curve2->Value(curve2->FirstParameter()), Precision::Confusion()) ||
-        first.IsEqual(curve2->Value(curve2->LastParameter()), Precision::Confusion())) {
+    if ((first.IsEqual(curve2->Value(curve2->FirstParameter()), Precision::Confusion()) ||
+            first.IsEqual(curve2->Value(curve2->LastParameter()), Precision::Confusion())) &&
+        (second.IsEqual(curve2->Value(curve2->FirstParameter()), Precision::Confusion()) ||
+            second.IsEqual(curve2->Value(curve2->LastParameter()), Precision::Confusion()))) {
         return true;
     }
 
