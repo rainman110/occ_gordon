@@ -78,28 +78,22 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_C
     // after sorting the intersection matrix
     std::vector<Handle(Geom_Curve)> uniqueProfiles;
     for (const auto& profile : profiles) {
-        bool isDuplicate = false;
-        for (const auto& uniqueProfile : uniqueProfiles) {
-            if (curvesAreSame(profile, uniqueProfile)) {
-                isDuplicate = true;
-                break;
-            }
-        }
-        if (!isDuplicate) {
+        const bool isUnique = std::none_of(uniqueProfiles.begin(), uniqueProfiles.end(), [&](const Handle(Geom_Curve) & curve) {
+            return curvesAreSame(profile, curve);
+        });
+
+        if (isUnique) {
             uniqueProfiles.push_back(profile);
         }
     }
 
     std::vector<Handle(Geom_Curve)> uniqueGuides;
     for (const auto& guide : guides) {
-        bool isDuplicate = false;
-        for (const auto& uniqueGuide : uniqueGuides) {
-            if (curvesAreSame(guide, uniqueGuide)) {
-                isDuplicate = true;
-                break;
-            }
-        }
-        if (!isDuplicate) {
+        const bool isUnique = std::none_of(uniqueGuides.begin(), uniqueGuides.end(), [&](const Handle(Geom_Curve) & curve) {
+            return curvesAreSame(guide, curve);
+        });
+
+        if (isUnique) {
             uniqueGuides.push_back(guide);
         }
     }
@@ -120,15 +114,11 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_C
     m_guides.reserve(uniqueGuides.size());
 
     // Copy the curves
-    for (std::vector<Handle(Geom_Curve)>::const_iterator it = uniqueProfiles.begin();
-        it != uniqueProfiles.end();
-        ++it) {
-        m_profiles.push_back(GeomConvert::CurveToBSplineCurve(*it));
+    for (auto&& profile : uniqueProfiles) {
+        m_profiles.push_back(GeomConvert::CurveToBSplineCurve(profile));
     }
-    for (std::vector<Handle(Geom_Curve)>::const_iterator it = uniqueGuides.begin();
-        it != uniqueGuides.end();
-        ++it) {
-        m_guides.push_back(GeomConvert::CurveToBSplineCurve(*it));
+    for (auto&& guide : uniqueGuides) {
+        m_guides.push_back(GeomConvert::CurveToBSplineCurve(guide));
     }
 }
 
@@ -214,7 +204,7 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
     math_Matrix tmp_intersection_params_v(0, nProfiles - 1, 0, nGuides - 1);
 
     // closed profiles/guides should not be handled by this method ideally
-	// it will only work if first profile/guide intersects with guide/profile at it's lowest parameter
+    // it will only work if first profile/guide intersects with guide/profile at it's lowest parameter
     // We cover case when curves alredy somewhat sorted and for closed profiles we already have 1 additional guide
     ComputeIntersections(tmp_intersection_params_u, tmp_intersection_params_v);
 
