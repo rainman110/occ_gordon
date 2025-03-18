@@ -359,6 +359,7 @@ namespace occ_gordon_internal
 {
 
 const double BSplineAlgorithms::REL_TOL_CLOSED = 1e-8;
+const double BSplineAlgorithms::PAR_CHECK_TOL = 1e-5;
 
 bool BSplineAlgorithms::isUDirClosed(const TColgp_Array2OfPnt& points, double tolerance)
 {
