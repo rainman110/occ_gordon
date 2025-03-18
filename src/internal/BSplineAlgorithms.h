@@ -42,6 +42,9 @@ public:
     /// Tolerance for closed curve detection
     static const double REL_TOL_CLOSED;
 
+	/// Tolerance for comparing curve parameters
+    static const double PAR_CHECK_TOL;
+
     /**
      * @brief computeParamsBSplineCurve:
      *          Computes the parameters of a Geom_BSplineCurve at the given points
