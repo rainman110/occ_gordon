@@ -35,8 +35,8 @@ T Clamp(T val, T min, T max)
 }
 
 InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_Curve)>& profiles,
-                                                            const std::vector<Handle(Geom_Curve)>& guides,
-                                                            double spatialTol)
+                                                 const std::vector<Handle(Geom_Curve)>& guides,
+                                                 double spatialTol)
     : InterpolateCurveNetwork(BSplineAlgorithms::toBSplines(profiles),
                               BSplineAlgorithms::toBSplines(guides), spatialTol)
 {
