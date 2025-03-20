@@ -43,6 +43,16 @@ public:
                                              const std::vector<Handle(Geom_BSplineCurve)>& guides,
                                              double spatialTolerance);
 
+    /**
+     * @brief InterpolateCurveNetwork interpolated a curve network of guide curves and profiles curves
+     * @param profiles The profiles to be interpolated
+     * @param guides   The guides curves to be interpolated
+     * @param spatialTolerance Maximum allowed distance between each guide and profile (in theory they must intersect)
+     */
+    InterpolateCurveNetwork(const std::vector<Handle(Geom_Curve)>& profiles,
+                                             const std::vector<Handle(Geom_Curve)>& guides,
+                                             double spatialTolerance);
+
     operator Handle(Geom_BSplineSurface) ();
     
     /// Returns the interpolation surface

@@ -34,6 +34,31 @@ T Clamp(T val, T min, T max)
     return std::max(min, std::min(val, max));
 }
 
+InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_Curve)>& profiles,
+                                                            const std::vector<Handle(Geom_Curve)>& guides,
+                                                            double spatialTol)
+    : m_hasPerformed(false)
+    , m_spatialTol(spatialTol)
+{
+    std::vector<Handle(Geom_BSplineCurve)> ucurves_bsplines, vcurves_bsplines;
+
+    ucurves_bsplines.reserve(profiles.size());
+    vcurves_bsplines.reserve(guides.size());
+
+    try {
+        for (const auto& profile : profiles) {
+            ucurves_bsplines.push_back(GeomConvert::CurveToBSplineCurve(profile));
+        }
+        for (const auto& guide : guides) {
+            ucurves_bsplines.push_back(GeomConvert::CurveToBSplineCurve(guide));
+        }
+    }
+    catch (Standard_Failure& err) {
+        throw std::runtime_error(std::string("Error converting curves to B-splines: ")
+            + err.GetMessageString());
+    }
+}
+
 InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_BSplineCurve)>& profiles,
                                                             const std::vector<Handle(Geom_BSplineCurve)>& guides,
                                                             double spatialTol)
@@ -477,6 +502,11 @@ void InterpolateCurveNetwork::Perform()
 }
 
 Handle(Geom_BSplineSurface) curveNetworkToSurface(const std::vector<Handle (Geom_BSplineCurve)> &profiles, const std::vector<Handle (Geom_BSplineCurve)> &guides, double tol)
+{
+    return InterpolateCurveNetwork(profiles, guides, tol).Surface();
+}
+
+Handle(Geom_BSplineSurface) curveNetworkToSurface(const std::vector<Handle(Geom_Curve)>& profiles, const std::vector<Handle(Geom_Curve)>& guides, double tol)
 {
     return InterpolateCurveNetwork(profiles, guides, tol).Surface();
 }

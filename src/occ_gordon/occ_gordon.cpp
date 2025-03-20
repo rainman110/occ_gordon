@@ -29,10 +29,10 @@ Handle(Geom_BSplineSurface) interpolate_curve_network(const std::vector<Handle (
     vcurves_bsplines.reserve(vcurves.size());
 
     try {
-		for (const auto& profile : ucurves) {
-			ucurves_bsplines.push_back(GeomConvert::CurveToBSplineCurve(profile));
-		}
-		for (const auto& guide : vcurves) {
+        for (const auto& profile : ucurves) {
+            ucurves_bsplines.push_back(GeomConvert::CurveToBSplineCurve(profile));
+        }
+        for (const auto& guide : vcurves) {
             ucurves_bsplines.push_back(GeomConvert::CurveToBSplineCurve(guide));
         }
     }
