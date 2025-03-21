@@ -37,26 +37,9 @@ T Clamp(T val, T min, T max)
 InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_Curve)>& profiles,
                                                             const std::vector<Handle(Geom_Curve)>& guides,
                                                             double spatialTol)
-    : m_hasPerformed(false)
-    , m_spatialTol(spatialTol)
+    : InterpolateCurveNetwork(BSplineAlgorithms::toBSplines(profiles),
+                              BSplineAlgorithms::toBSplines(guides), spatialTol)
 {
-    std::vector<Handle(Geom_BSplineCurve)> ucurves_bsplines, vcurves_bsplines;
-
-    ucurves_bsplines.reserve(profiles.size());
-    vcurves_bsplines.reserve(guides.size());
-
-    try {
-        for (const auto& profile : profiles) {
-            ucurves_bsplines.push_back(GeomConvert::CurveToBSplineCurve(profile));
-        }
-        for (const auto& guide : guides) {
-            ucurves_bsplines.push_back(GeomConvert::CurveToBSplineCurve(guide));
-        }
-    }
-    catch (Standard_Failure& err) {
-        throw std::runtime_error(std::string("Error converting curves to B-splines: ")
-            + err.GetMessageString());
-    }
 }
 
 InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_BSplineCurve)>& profiles,

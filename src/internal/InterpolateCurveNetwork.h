@@ -105,6 +105,11 @@ Handle(Geom_BSplineSurface) curveNetworkToSurface(const std::vector<Handle(Geom_
                                                               const std::vector<Handle(Geom_BSplineCurve)>& guides,
                                                               double spatialTol = 3e-4);
 
+/// Convenience function calling InterpolateCurveNetwork
+Handle(Geom_BSplineSurface) curveNetworkToSurface(const std::vector<Handle(Geom_Curve)>& profiles,
+                                                  const std::vector<Handle(Geom_Curve)>& guides,
+                                                  double spatialTol = 3e-4);
+
 } // namespace occ_gordon_internal
 
 #endif // INTERPOLATECURVENETWORK_H

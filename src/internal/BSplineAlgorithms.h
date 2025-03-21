@@ -253,6 +253,9 @@ public:
 
     /// Trims a bspline curve
     static Handle(Geom_BSplineCurve) trimCurve(const Handle(Geom_BSplineCurve)& curve, double umin, double umax);
+
+    // Converts a curve array into a b-spline array
+    static std::vector<Handle(Geom_BSplineCurve)> toBSplines(const std::vector<Handle(Geom_Curve)> curves);
 };
 } // namespace occ_gordon_internal
 
