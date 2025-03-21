@@ -475,6 +475,17 @@ std::vector<double> BSplineAlgorithms::knotsFromCurveParameters(std::vector<doub
     return knots;
 }
 
+std::vector<Handle(Geom_BSplineCurve)> BSplineAlgorithms::toBSplines(const std::vector<Handle(Geom_Curve)>& curves)
+{
+    std::vector<Handle(Geom_BSplineCurve)> result;
+
+    std::transform(curves.begin(), curves.end(), std::back_inserter(result), [](const auto& curve) {
+        return  GeomConvert::CurveToBSplineCurve(curve);
+    });
+
+    return result;
+}
+
 double BSplineAlgorithms::scale(const TColgp_Array2OfPnt& points)
 {
     double theScale = 0.;

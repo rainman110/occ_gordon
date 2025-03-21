@@ -34,29 +34,16 @@ T Clamp(T val, T min, T max)
     return std::max(min, std::min(val, max));
 }
 
-/**
- * @brief Checks that ends of 2 curves are sharing same point
- *
- * @param curve1 first curve
- * @param curve2 second curve
- */
-bool curvesAreSame(Handle(Geom_Curve) curve1, Handle(Geom_Curve) curve2)
-{
-    gp_Pnt first = curve1->Value(curve1->FirstParameter());
-    gp_Pnt second = curve1->Value(curve1->LastParameter());
-
-    if ((first.IsEqual(curve2->Value(curve2->FirstParameter()), Precision::Confusion()) ||
-            first.IsEqual(curve2->Value(curve2->LastParameter()), Precision::Confusion())) &&
-        (second.IsEqual(curve2->Value(curve2->FirstParameter()), Precision::Confusion()) ||
-            second.IsEqual(curve2->Value(curve2->LastParameter()), Precision::Confusion()))) {
-        return true;
-    }
-
-    return false;
-}
-
 InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_Curve)>& profiles,
                                                             const std::vector<Handle(Geom_Curve)>& guides,
+                                                            double spatialTol)
+    : InterpolateCurveNetwork(BSplineAlgorithms::toBSplines(profiles),
+                              BSplineAlgorithms::toBSplines(guides), spatialTol)
+{
+}
+
+InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_BSplineCurve)>& profiles,
+                                                            const std::vector<Handle(Geom_BSplineCurve)>& guides,
                                                             double spatialTol)
     : m_hasPerformed(false)
     , m_spatialTol(spatialTol)
@@ -76,10 +63,10 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_C
     // it should be enough, since surface closed in both U and V not supported by algorithm
     // if profiles or guides are closed curves, we will add the first curve at the end later
     // after sorting the intersection matrix
-    std::vector<Handle(Geom_Curve)> uniqueProfiles;
+    std::vector<Handle(Geom_BSplineCurve)> uniqueProfiles;
     for (const auto& profile : profiles) {
-        const bool isUnique = std::none_of(uniqueProfiles.begin(), uniqueProfiles.end(), [&](const Handle(Geom_Curve) & curve) {
-            return curvesAreSame(profile, curve);
+        const bool isUnique = std::none_of(uniqueProfiles.begin(), uniqueProfiles.end(), [&](const Handle(Geom_BSplineCurve) & curve) {
+            return profile->IsEqual(curve, Precision::Confusion());
         });
 
         if (isUnique) {
@@ -87,10 +74,10 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_C
         }
     }
 
-    std::vector<Handle(Geom_Curve)> uniqueGuides;
+    std::vector<Handle(Geom_BSplineCurve)> uniqueGuides;
     for (const auto& guide : guides) {
-        const bool isUnique = std::none_of(uniqueGuides.begin(), uniqueGuides.end(), [&](const Handle(Geom_Curve) & curve) {
-            return curvesAreSame(guide, curve);
+        const bool isUnique = std::none_of(uniqueGuides.begin(), uniqueGuides.end(), [&](const Handle(Geom_BSplineCurve) & curve) {
+            return guide->IsEqual(curve, Precision::Confusion());
         });
 
         if (isUnique) {
@@ -113,12 +100,12 @@ InterpolateCurveNetwork::InterpolateCurveNetwork(const std::vector<Handle(Geom_C
     m_profiles.reserve(uniqueProfiles.size());
     m_guides.reserve(uniqueGuides.size());
 
-    // Copy the curves
+    // Store the curves
     for (auto&& profile : uniqueProfiles) {
-        m_profiles.push_back(GeomConvert::CurveToBSplineCurve(profile));
+        m_profiles.push_back(profile);
     }
     for (auto&& guide : uniqueGuides) {
-        m_guides.push_back(GeomConvert::CurveToBSplineCurve(guide));
+        m_guides.push_back(guide);
     }
 }
 
@@ -497,7 +484,12 @@ void InterpolateCurveNetwork::Perform()
     m_hasPerformed = true;
 }
 
-Handle(Geom_BSplineSurface) curveNetworkToSurface(const std::vector<Handle (Geom_Curve)> &profiles, const std::vector<Handle (Geom_Curve)> &guides, double tol)
+Handle(Geom_BSplineSurface) curveNetworkToSurface(const std::vector<Handle (Geom_BSplineCurve)> &profiles, const std::vector<Handle (Geom_BSplineCurve)> &guides, double tol)
+{
+    return InterpolateCurveNetwork(profiles, guides, tol).Surface();
+}
+
+Handle(Geom_BSplineSurface) curveNetworkToSurface(const std::vector<Handle(Geom_Curve)>& profiles, const std::vector<Handle(Geom_Curve)>& guides, double tol)
 {
     return InterpolateCurveNetwork(profiles, guides, tol).Surface();
 }
