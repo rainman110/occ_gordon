@@ -475,7 +475,7 @@ std::vector<double> BSplineAlgorithms::knotsFromCurveParameters(std::vector<doub
     return knots;
 }
 
-std::vector<Handle (Geom_BSplineCurve)> BSplineAlgorithms::toBSplines(const std::vector<Handle (Geom_Curve)> curves)
+std::vector<Handle(Geom_BSplineCurve)> BSplineAlgorithms::toBSplines(const std::vector<Handle(Geom_Curve)>& curves)
 {
     std::vector<Handle(Geom_BSplineCurve)> result;
 
