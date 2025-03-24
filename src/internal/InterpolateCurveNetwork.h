@@ -90,6 +90,8 @@ private:
                                                    math_Matrix & intersection_params_u,
                                                    math_Matrix & intersection_params_v) const;
 
+    void EnsureC2();
+
     bool m_hasPerformed;
     double m_spatialTol;
     

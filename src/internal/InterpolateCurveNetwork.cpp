@@ -19,6 +19,7 @@
 #include <GeomConvert.hxx>
 
 #include <algorithm>
+#include <cassert>
 
 
 namespace occ_gordon_internal
@@ -417,6 +418,35 @@ void InterpolateCurveNetwork::EliminateInaccuraciesNetworkIntersections(const st
     }
 }
 
+void occ_gordon_internal::InterpolateCurveNetwork::EnsureC2()
+{
+    assert(m_gordonSurf);
+
+    // By construction, the 3 surfaces could have different degrees
+    // resulting in a higher knot multiplicity. This then results
+    // in OCCT reporting lower continuity.
+    // To fix it, we try to remove those knots using a small tolerance
+    // If successful, this surface should remain unchainged within the
+    // tolerance. We want at least C2.
+    int minUMult = std::max(1, m_gordonSurf->UDegree() - 2);
+    for (int iu = 2; iu <= m_gordonSurf->NbUKnots()-1; ++iu)
+    {
+        if (m_gordonSurf->UMultiplicity(iu) > minUMult)
+        {
+            m_gordonSurf->RemoveUKnot(iu, minUMult, m_spatialTol);
+        }
+    }
+
+    int minVMult = std::max(1, m_gordonSurf->VDegree() - 2);
+    for (int iv = 2; iv <= m_gordonSurf->NbVKnots()-1; ++iv)
+    {
+        if (m_gordonSurf->VMultiplicity(iv) > minVMult)
+        {
+            m_gordonSurf->RemoveVKnot(iv, minVMult, m_spatialTol);
+        }
+    }
+}
+
 
 Handle(Geom_BSplineSurface) InterpolateCurveNetwork::Surface()
 {
@@ -480,6 +510,8 @@ void InterpolateCurveNetwork::Perform()
     m_skinningSurfProfiles = builder.SurfaceProfiles();
     m_skinningSurfGuides = builder.SurfaceGuides();
     m_tensorProdSurf = builder.SurfaceIntersections();
+
+    EnsureC2();
 
     m_hasPerformed = true;
 }
