@@ -311,8 +311,8 @@ namespace
 
             gp_Vec diff = p1.XYZ() - p2.XYZ();
             F = diff.SquareMagnitude();
-            G(1) = 2. * diff.Dot(d1)* (m_c1->LastParameter()-m_c1->FirstParameter()) * d_getUParam(X.Value(1));
-            G(2) = -2. * diff.Dot(d2) * (m_c2->LastParameter()-m_c2->FirstParameter()) * d_getUParam(X.Value(2));
+            G(1) = 2. * diff.Dot(d1) * d_getUParam(X.Value(1));
+            G(2) = -2. * diff.Dot(d2) * d_getUParam(X.Value(2));
 
             return true;
         }
