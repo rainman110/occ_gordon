@@ -13,3 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Fixed
+ - Fixed gradient computation in B-spline intersection. This should improve
+   robustness and convergence of the intersection computation.
+   Thanks: @gongfan99 🙏
+   @joergbrech, @AntonReiswich: Tagging you here. You might need to include this into TiGL / geoml.
