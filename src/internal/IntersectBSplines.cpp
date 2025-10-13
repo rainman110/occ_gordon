@@ -336,7 +336,7 @@ namespace
 
         // Compute numerical gradient using finite differences
         math_Vector numericalGrad(1, nvars);
-        for (int i = 1; i <= 2; ++i) {
+        for (int i = 1; i <= nvars; ++i) {
             math_Vector Xplus(X);
             math_Vector Xminus(X);
 
