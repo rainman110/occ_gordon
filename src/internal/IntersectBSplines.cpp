@@ -312,7 +312,7 @@ namespace
             gp_Vec diff = p1.XYZ() - p2.XYZ();
             F = diff.SquareMagnitude();
             G(1) = 2. * diff.Dot(d1) * d_getUParam(X.Value(1));
-            G(2) = -2. * diff.Dot(d2) * d_getUParam(X.Value(2));
+            G(2) = -2. * diff.Dot(d2)  * d_getVParam(X.Value(2));
 
             return true;
         }
@@ -320,7 +320,50 @@ namespace
     private:
         const Handle(Geom_Curve) m_c1, m_c2;
     };
-   
+
+
+    void CheckGradient(math_MultipleVarFunctionWithGradient& func, const math_Vector& X, double step)
+    {
+        int nvars = func.NbVariables();
+
+        // Analytical gradient and temporary storage
+        math_Vector analyticalGrad(1, nvars);
+        math_Vector dummy(1, nvars);
+        double baseValue = 0.0;
+
+        // Evaluate function and analytical gradient at X
+        func.Values(X, baseValue, analyticalGrad);
+
+        // Compute numerical gradient using finite differences
+        math_Vector numericalGrad(1, nvars);
+        for (int i = 1; i <= 2; ++i) {
+            math_Vector Xplus(X);
+            math_Vector Xminus(X);
+
+            Xplus.Value(i) += step;
+            Xminus.Value(i) -= step;
+
+            double f_plus = 0.0, f_minus = 0.0;
+            func.Values(Xplus, f_plus, dummy);
+            func.Values(Xminus, f_minus, dummy);
+
+            // Central difference for better accuracy
+            numericalGrad.Value(i) = (f_plus - f_minus) / (2.0 * step);
+        }
+
+        // Compare analytical vs. numerical gradients
+        std::cout << std::fixed << std::setprecision(8);
+        std::cout << "=== Gradient Check ===" << std::endl;
+
+        for (int i = 1; i <= nvars; ++i) {
+            double diff = std::abs(numericalGrad.Value(i) - analyticalGrad.Value(i));
+            std::cout << "dF/dX" << i << " | Analytical: " << analyticalGrad.Value(i)
+                      << "  Numerical: " << numericalGrad.Value(i)
+                      << "  | Diff: " << diff << std::endl;
+        }
+
+        std::cout << "======================\n" << std::endl;
+    }
 
 } // namespace
 
@@ -389,6 +432,8 @@ std::vector<CurveIntersectionResult> IntersectBSplines(const Handle(Geom_BSpline
         guess(1) = 0.;
         guess(2) = 0.;
 
+        // Only comment in for debugging purposes
+        //CheckGradient(obj, guess, 1e-6);
 
         math_FRPR optimizer(obj, 1e-10, 200);
         optimizer.Perform(obj, guess);
