@@ -16,10 +16,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2019]
+        os: [ubuntu-latest, windows-2022]
         include:
           - vcpkg_triplet: x64-windows
-            os: windows-2019
+            os: windows-2022
           - vcpkg_triplet: x64-linux-dynamic
             os: ubuntu-latest
          
