@@ -31,7 +31,12 @@ add_library(occ_gordon_internal OBJECT
 )
 
 
-target_link_libraries(occ_gordon_internal PUBLIC ${OpenCASCADE_LIBRARIES})
+set(_occ_gordon_occt_libs ${OCC_GORDON_OCCT_LIBRARIES})
+if(NOT _occ_gordon_occt_libs)
+    set(_occ_gordon_occt_libs ${OpenCASCADE_LIBRARIES})
+endif()
+
+target_link_libraries(occ_gordon_internal PUBLIC ${_occ_gordon_occt_libs})
 target_compile_features(occ_gordon_internal PRIVATE cxx_std_17)
 
 target_include_directories(occ_gordon_internal
@@ -59,7 +64,7 @@ generate_export_header(occ_gordon
     EXPORT_FILE_NAME occ_gordon/exports.h
 )
 
-target_link_libraries(occ_gordon PUBLIC ${OpenCASCADE_LIBRARIES})
+target_link_libraries(occ_gordon PUBLIC ${_occ_gordon_occt_libs})
 
 
 if(MSVC)

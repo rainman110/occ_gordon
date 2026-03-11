@@ -6,7 +6,18 @@
 # search for OpenCASCADE
 set(CMAKE_PREFIX_PATH "$ENV{CASROOT};${CASROOT};${CMAKE_PREFIX_PATH}")
 
-find_package(OpenCASCADE CONFIG REQUIRED)
+# This project only needs OCCT modeling toolkits
+find_package(OpenCASCADE CONFIG REQUIRED COMPONENTS
+    FoundationClasses
+    ModelingData
+    ModelingAlgorithms
+)
+
+set(OCC_GORDON_OCCT_LIBRARIES
+    ${OpenCASCADE_FoundationClasses_LIBRARIES}
+    ${OpenCASCADE_ModelingData_LIBRARIES}
+    ${OpenCASCADE_ModelingAlgorithms_LIBRARIES}
+)
 option(OpenCASCADE_STATIC_LIBS "Should be checked, if static OpenCASCADE libs are linked" OFF)
 
 message(STATUS "Found opencascade " ${OpenCASCADE_VERSION})
