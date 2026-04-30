@@ -754,8 +754,8 @@ ApproxResult BSplineAlgorithms::reparametrizeBSplineContinuouslyApprox(const Han
         approximationObj.InterpolatePoint(idx, true);
     }
 #endif
-    
-    ApproxResult result = approximationObj.FitCurveOptimal(parameters);
+
+    ApproxResult result = approximationObj.FitCurveOptimal(parameters, 1);
 
     assert(!result.curve.IsNull());
 
