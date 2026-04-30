@@ -232,8 +232,8 @@ namespace
     class CurveCurveDistanceObjective : public math_MultipleVarFunctionWithGradient
     {
     public:
-        CurveCurveDistanceObjective(const Handle(Geom_Curve)& c1, const Handle(Geom_Curve)& c2)
-            : m_c1(c1), m_c2(c2)
+        CurveCurveDistanceObjective(const Handle(Geom_Curve)& c1, const Handle(Geom_Curve)& c2, double scale)
+            : m_c1(c1), m_c2(c2), m_invScaleSqr(1. / sqr(std::max(scale, std::numeric_limits<double>::epsilon())))
         {}
 
         virtual Standard_Integer NbVariables()  const override
@@ -310,17 +310,17 @@ namespace
             m_c2->D1(v, p2, d2);
 
             gp_Vec diff = p1.XYZ() - p2.XYZ();
-            F = diff.SquareMagnitude();
-            G(1) = 2. * diff.Dot(d1) * d_getUParam(X.Value(1));
-            G(2) = -2. * diff.Dot(d2)  * d_getVParam(X.Value(2));
+            F = diff.SquareMagnitude() * m_invScaleSqr;
+            G(1) = 2. * diff.Dot(d1) * d_getUParam(X.Value(1)) * m_invScaleSqr;
+            G(2) = -2. * diff.Dot(d2) * d_getVParam(X.Value(2)) * m_invScaleSqr;
 
             return true;
         }
 
     private:
         const Handle(Geom_Curve) m_c1, m_c2;
+        const double m_invScaleSqr;
     };
-
 
     void CheckGradient(math_MultipleVarFunctionWithGradient& func, const math_Vector& X, double step)
     {
@@ -373,6 +373,7 @@ namespace occ_gordon_internal
 
 std::vector<CurveIntersectionResult> IntersectBSplines(const Handle(Geom_BSplineCurve) curve1, const Handle(Geom_BSplineCurve) curve2, double tolerance)
 {
+    const double optimizerScale = (BSplineAlgorithms::scale(curve1) + BSplineAlgorithms::scale(curve2)) / 2.;
     auto hulls = getRangesOfIntersection(curve1, curve2, tolerance);
     
     std::list<BoundingBox> curve1_ints, curve2_ints;
@@ -425,7 +426,7 @@ std::vector<CurveIntersectionResult> IntersectBSplines(const Handle(Geom_BSpline
         auto c1 = BSplineAlgorithms::trimCurve(curve1, boxes.b1.range.min,boxes.b1.range.max);
         auto c2 = BSplineAlgorithms::trimCurve(curve2, boxes.b2.range.min,boxes.b2.range.max);
 
-        CurveCurveDistanceObjective obj(c1, c2);
+        CurveCurveDistanceObjective obj(c1, c2, optimizerScale);
 
         // The objective is designed such that x=[0, 0] is in the middle of the parameter space of both curves
         math_Vector guess(1, 2);

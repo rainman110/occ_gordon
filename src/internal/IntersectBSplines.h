@@ -33,7 +33,9 @@ struct CurveIntersectionResult
  * intersect each other. If so, this process is repeated until the curve segment is almost a line segment.
  * This result is used to locally optimize into a true minimum.
  */
-std::vector<CurveIntersectionResult> IntersectBSplines(const Handle(Geom_BSplineCurve) curve1, const Handle(Geom_BSplineCurve) curve2, double tolerance=1e-5);
+std::vector<CurveIntersectionResult> IntersectBSplines(const Handle(Geom_BSplineCurve) curve1,
+                                                       const Handle(Geom_BSplineCurve) curve2,
+                                                       double absTolerance=1e-5);
 
 } // namespace occ_gordon_internal
 

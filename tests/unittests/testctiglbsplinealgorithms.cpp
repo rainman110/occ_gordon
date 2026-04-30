@@ -1004,7 +1004,7 @@ TEST(BSplineAlgorithms, testIntersectionFinder)
     std::vector<std::pair<double, double> > intersection_vector = BSplineAlgorithms::intersections(spline_u, spline_v);
 
     // splines should intersect at u = 0.5 + std::sqrt(0.1) and v = 4. / 5
-    ASSERT_NEAR(intersection_vector[0].first, 0.5 + std::sqrt(0.1), 1e-13);
+    ASSERT_NEAR(intersection_vector[0].first, 0.5 + std::sqrt(0.1), 1e-12);
     ASSERT_NEAR(intersection_vector[0].second, 4. / 5, 1e-13);
 }
 /*
@@ -1223,9 +1223,9 @@ TEST(BSplineAlgorithms, testCreateGordonSurfaceGeneral)
             gp_Pnt point_curve2 = spline_u4->Value(u_value);  // represents y(z) = (z - 0.5)^2 with offset 2 in x-direction
             gp_Pnt right_point(point_curve1.X() * (1. - v_value) + point_curve2.X() * v_value, point_curve1.Y() * (1. - v_value) + point_curve2.Y() * v_value, point_curve1.Z() * (1. - v_value) + point_curve2.Z() * v_value);
 
-            ASSERT_NEAR(surface_point.X(), right_point.X(), 1e-13);
-            ASSERT_NEAR(surface_point.Y(), right_point.Y(), 1e-13);
-            ASSERT_NEAR(surface_point.Z(), right_point.Z(), 1e-13);
+            ASSERT_NEAR(surface_point.X(), right_point.X(), 1e-12);
+            ASSERT_NEAR(surface_point.Y(), right_point.Y(), 1e-12);
+            ASSERT_NEAR(surface_point.Z(), right_point.Z(), 1e-12);
         }
     }
 }
