@@ -104,6 +104,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup MSVC compiler
+        if: startsWith(matrix.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Set up micromamba
         uses: mamba-org/setup-micromamba@v2
         with:
