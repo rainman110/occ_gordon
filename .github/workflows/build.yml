@@ -22,8 +22,6 @@ jobs:
         uses: mamba-org/setup-micromamba@v2
         with:
           environment-name: occ_gordon-ci
-          channels: conda-forge
-          channel-priority: strict
           cache-environment: true
           cache-downloads: true
           create-args: >-
@@ -112,8 +110,6 @@ jobs:
         uses: mamba-org/setup-micromamba@v2
         with:
           environment-name: occ_gordon-conda
-          channels: conda-forge
-          channel-priority: strict
           cache-environment: true
           cache-downloads: true
           create-args: >-
