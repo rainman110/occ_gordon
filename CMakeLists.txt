@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2018 German Aerospace Center (DLR)
 
 cmake_minimum_required (VERSION 3.15.0)
-project (occ_gordon VERSION 1.0.0)
+project (occ_gordon VERSION 1.3.1)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
