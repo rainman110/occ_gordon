@@ -254,7 +254,7 @@ ApproxResult BSplineApproxInterp::FitCurveOptimal(const std::vector<double>& ini
     ApproxResult result = solve(parms, occKnots->Array1(), occMults->Array1());
     double old_error = result.error * 2.;
 
-    while(result.error > 0 && (old_error - result.error) / std::max(result.error, 1e-6) > 1e-3 && iteration < maxIter) {
+    while(result.error > 0 && (old_error - result.error) / result.error > 1e-3 && iteration < maxIter) {
         old_error = result.error;
 
         optimizeParameters(result.curve, parms);
