@@ -84,3 +84,50 @@ jobs:
           path: |
             build/tests/unittests/test-results
             build/tests/apitests/test-results
+
+  conda-package:
+    name: Conda package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            test_package: true
+          - os: windows-2022
+            test_package: false
+
+    env:
+      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up micromamba
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: occ_gordon-conda
+          channels: conda-forge
+          channel-priority: strict
+          cache-environment: true
+          cache-downloads: true
+          create-args: >-
+            boa
+            python=3.11
+
+      - name: Build conda package
+        shell: bash -el {0}
+        run: |
+          if [ "${{ matrix.test_package }}" = "true" ]; then
+            conda mambabuild conda --python 3.11
+          else
+            conda mambabuild conda --python 3.11 --no-test
+          fi
+
+      - name: Upload conda packages
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: occ_gordon-conda-${{ matrix.os }}
+          path: conda-bld
