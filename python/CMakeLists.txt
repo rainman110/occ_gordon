@@ -6,7 +6,7 @@
 #  - export CMAKE_PREFIX_PATH=path/to/pythonocc-code
 #  - pip install .
 
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.15)
 project(occ_gordon-python VERSION 0.1)
 
 set(CMAKE_INSTALL_RPATH $ORIGIN)
