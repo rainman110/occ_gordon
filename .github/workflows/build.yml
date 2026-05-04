@@ -83,6 +83,42 @@ jobs:
             build/tests/unittests/test-results
             build/tests/apitests/test-results
 
+  python-build:
+    name: Python build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up micromamba
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: occ_gordon-python
+          cache-environment: true
+          cache-downloads: true
+          create-args: >-
+            python=3.11
+            pip
+            scikit-build-core
+            cmake
+            ninja
+            swig
+            cxx-compiler
+            occt=7.9.3
+            pythonocc-core=7.9.3
+
+      - name: Install Python package
+        shell: bash -el {0}
+        working-directory: python
+        run: |
+          export CMAKE_GENERATOR=Ninja
+          python -m pip install -v --no-build-isolation .
+
+      - name: Smoke test Python package
+        shell: bash -el {0}
+        run: |
+          python -c "import occ_gordon; import occ_gordon.occ_helpers.topology; print(occ_gordon.__file__)"
+
   conda-package:
     name: Conda package (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
