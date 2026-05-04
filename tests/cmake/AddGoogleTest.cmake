@@ -8,15 +8,25 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # Build gtest as a static lib
 set(BUILD_SHARED_LIBS OFF)
 
-include(FetchContent)
-FetchContent_Declare(googletest
-    GIT_REPOSITORY      https://github.com/google/googletest.git
-    GIT_TAG             v1.15.2
-    EXCLUDE_FROM_ALL
+find_package(GTest CONFIG QUIET)
+if (TARGET GTest::gtest)
+    if (NOT TARGET gtest)
+        add_library(gtest INTERFACE IMPORTED)
+        set_target_properties(gtest PROPERTIES
+            INTERFACE_LINK_LIBRARIES GTest::gtest
+        )
+    endif()
+else()
+    include(FetchContent)
+    FetchContent_Declare(googletest
+        GIT_REPOSITORY      https://github.com/google/googletest.git
+        GIT_TAG             v1.15.2
+        EXCLUDE_FROM_ALL
 
-)
+    )
 
-FetchContent_MakeAvailable(googletest)
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 mark_as_advanced(
     gtest_force_shared_crt
