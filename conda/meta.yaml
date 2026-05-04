@@ -1,0 +1,38 @@
+{% set version = "1.3.1" %}
+
+package:
+  name: occ_gordon
+  version: {{ version }}
+
+source:
+  git_url: https://github.com/rainman110/occ_gordon
+  git_tag: main # v{{ version }}
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - ninja
+    - cmake
+    - swig
+    - scikit-build-core
+
+  host:
+    - python {{ python }}
+    - pip
+    - scikit-build-core
+    - pythonocc-core==7.9.3
+
+  run:
+    - python {{ python }}
+    - pythonocc-core
+
+test:
+  imports:
+    - occ_gordon
+    
+about:
+  home: https://github.com/rainman110/occ_gordon
+  license: Apache 2.0
+  summary: A gordon surface algorithm for pythonocc
