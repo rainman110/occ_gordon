@@ -20,6 +20,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 
 
 namespace occ_gordon_internal
@@ -334,7 +337,28 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         Handle(Geom_BSplineCurve)& profile = m_profiles[static_cast<size_t>(spline_u_idx)];
-        profile = BSplineAlgorithms::reparametrizeBSplineContinuouslyApprox(profile, oldParametersProfile, newParametersProfiles, max_cp_u).curve;
+        try {
+            profile = BSplineAlgorithms::reparametrizeBSplineContinuouslyApprox(profile, oldParametersProfile, newParametersProfiles, max_cp_u).curve;
+        }
+        catch (const Standard_Failure& err) {
+            std::ostringstream oss;
+            const Standard_CString msg = err.GetMessageString();
+            oss << "Profile reparametrization failed at profile index " << spline_u_idx
+                << " (OCCT Standard_Failure): " << (msg ? msg : "<empty>");
+            throw error(oss.str());
+        }
+        catch (const std::exception& err) {
+            std::ostringstream oss;
+            oss << "Profile reparametrization failed at profile index " << spline_u_idx
+                << ": " << err.what();
+            throw error(oss.str());
+        }
+        catch (...) {
+            std::ostringstream oss;
+            oss << "Profile reparametrization failed at profile index " << spline_u_idx
+                << ": unknown non-standard exception";
+            throw error(oss.str());
+        }
     }
 
     // reparametrize v-directional B-splines
@@ -364,7 +388,28 @@ void InterpolateCurveNetwork::MakeCurvesCompatible()
         }
 
         Handle(Geom_BSplineCurve)& guide = m_guides[static_cast<size_t>(spline_v_idx)];
-        guide = BSplineAlgorithms::reparametrizeBSplineContinuouslyApprox(guide, oldParameterGuide, newParametersGuides, max_cp_v).curve;
+        try {
+            guide = BSplineAlgorithms::reparametrizeBSplineContinuouslyApprox(guide, oldParameterGuide, newParametersGuides, max_cp_v).curve;
+        }
+        catch (const Standard_Failure& err) {
+            std::ostringstream oss;
+            const Standard_CString msg = err.GetMessageString();
+            oss << "Guide reparametrization failed at guide index " << spline_v_idx
+                << " (OCCT Standard_Failure): " << (msg ? msg : "<empty>");
+            throw error(oss.str());
+        }
+        catch (const std::exception& err) {
+            std::ostringstream oss;
+            oss << "Guide reparametrization failed at guide index " << spline_v_idx
+                << ": " << err.what();
+            throw error(oss.str());
+        }
+        catch (...) {
+            std::ostringstream oss;
+            oss << "Guide reparametrization failed at guide index " << spline_v_idx
+                << ": unknown non-standard exception";
+            throw error(oss.str());
+        }
     }
 
 

@@ -18,6 +18,7 @@
 
 %{
 #include <occ_gordon/occ_gordon.h>
+#include <Standard_Failure.hxx>
 %}
 
 
@@ -32,6 +33,11 @@
 %exception {
     try {
         $action
+    }
+    catch (const Standard_Failure& err) {
+        const Standard_CString msg = err.GetMessageString();
+        PyErr_SetString(PyExc_RuntimeError, msg ? msg : "OCCT Standard_Failure");
+        SWIG_fail;
     }
     catch (std::exception& err) {
         PyErr_SetString(PyExc_RuntimeError, const_cast<char*>(err.what()));

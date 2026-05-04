@@ -10,6 +10,7 @@
 %include common.i
 
 %{
+#include <Standard_Persistent.hxx>
 #include <TColStd_module.hxx>
 #include <TCollection_module.hxx>
 #include <TColgp_module.hxx>
