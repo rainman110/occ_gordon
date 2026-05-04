@@ -43,26 +43,39 @@ jobs:
         shell: bash -el {0}
         run: cmake --build build --parallel
 
-      - name: Run tests
+      - name: Run unit tests
         shell: bash -el {0}
+        working-directory: build/tests/unittests
         run: |
           set +e
           mkdir -p test-results
-          build/tests/unittests/occ_gordon-unittests --gtest_output=xml:test-results/occ_gordon-unittests.xml
+          ./occ_gordon-unittests --gtest_output=xml:test-results/occ_gordon-unittests.xml
           unit_status=$?
-          build/tests/apitests/occ_gordon-apitest --gtest_output=xml:test-results/occ_gordon-apitest.xml
+          exit $unit_status
+
+      - name: Run api tests
+        shell: bash -el {0}
+        working-directory: build/tests/apitests
+        run: |
+          set +e
+          mkdir -p test-results
+          ./occ_gordon-apitest --gtest_output=xml:test-results/occ_gordon-apitest.xml
           api_status=$?
-          exit $((unit_status || api_status))
+          exit $api_status
 
       - name: Publish test results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: test-results/*.xml
+          files: |
+            build/tests/unittests/test-results/*.xml
+            build/tests/apitests/test-results/*.xml
 
       - name: Store test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: occ_gordon-test-results
-          path: test-results
+          path: |
+            build/tests/unittests/test-results
+            build/tests/apitests/test-results
