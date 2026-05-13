@@ -23,7 +23,7 @@ A curve network is a collection of interconnected curves that define the structu
 
 The __Gordon surface interpolation__ method was first published by W.J. Gordon in 1969. It allows for surface generation through the interpolation of an arbitrary number of guide and profile curves using B-splines. It extends the  __Coons patch__ method to more complex curve networks, making it versatile tool for __surface modeling__ in __3D CAD applications__.
 
-## Usage Example
+## Usage Example (C++)
 
 To use the __occ_gordon__ library, include the header file `<occ_gordon/occ_gordon.h>`. The main function for curve network interpolation is `occ_gordon::interpolate_curve_network`.
 
@@ -41,6 +41,23 @@ auto surface = occ_gordon::interpolate_curve_network(ucurves, vcurves, inters_to
 ```
 
 This example demonstrates how to interpolate a curve network using a B-spline surface with a specified intersection tolerance.
+
+## Use from Python
+
+To install occ_gordon from python, just install it via conda/mamba from conda-forge
+
+```sh
+conda install occ-gordon -c conda-forge
+```
+
+To use it, just pass two curve arrays to the function
+
+```python
+from occ_gordon import interpolate_curve_network
+
+...
+surface = interpolate_curve_network(profile_curves, guide_curves, tolerance=1.e-5)
+```
 
 ## Building
 
