@@ -1,4 +1,3 @@
-#define OCC_GORDON_IMPLEMENTATION
 #include "occ_gordon_single.hpp"
 
 #include <Geom_Line.hxx>

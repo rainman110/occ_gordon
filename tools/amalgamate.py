@@ -18,6 +18,8 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
 INCLUDE_RE = re.compile(r"^\s*#\s*include\s*([<\"])([^>\"]+)[>\"]\s*(?://.*)?$")
 PRAGMA_ONCE_RE = re.compile(r"^\s*#\s*pragma\s+once\s*$")
 PLACEHOLDER_RE = re.compile(r"\{\{([A-Z_]+)(?::([^}]+))?\}\}")
@@ -71,6 +73,9 @@ class Amalgamator:
         except OSError as exc:
             raise RuntimeError(f"Failed to read {resolved}: {exc}") from exc
 
+        if resolved.suffix == ".cpp":
+            text = self._inline_cpp_definitions(text)
+
         output: list[str] = []
         output.append(f"// BEGIN FILE: {relpath(resolved, self.project_root)}\n")
 
@@ -96,6 +101,91 @@ class Amalgamator:
             return "".join(output)
         finally:
             self._stack.pop()
+
+    def _prefix_inline(self, line: str) -> str:
+        stripped = line.lstrip()
+        if stripped.startswith("inline "):
+            return line
+        indent = line[: len(line) - len(stripped)]
+        return f"{indent}inline {stripped}"
+
+    def _is_cpp_variable_definition(self, line: str) -> bool:
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", "//", "/*", "*", "*/")):
+            return False
+        if "(" in stripped or "{" in stripped or "}" in stripped:
+            return False
+        if "::" not in stripped or "=" not in stripped or not stripped.endswith(";"):
+            return False
+        if stripped.startswith(("namespace ", "using ", "typedef ", "class ", "struct ", "enum ", "template ")):
+            return False
+        return True
+
+    def _looks_like_cpp_function_start(self, line: str) -> bool:
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", "//", "/*", "*", "*/")):
+            return False
+        if stripped.startswith(("namespace ", "using ", "typedef ", "class ", "struct ", "enum ", "template ")):
+            return False
+        if "(" not in stripped or stripped.endswith(";"):
+            return False
+        if stripped.startswith(("if ", "for ", "while ", "switch ", "catch ")):
+            return False
+        return True
+
+    def _find_cpp_function_block_end(self, lines: list[str], start: int) -> int | None:
+        for idx in range(start, len(lines)):
+            stripped = lines[idx].strip()
+            if idx > start and stripped.endswith(";"):
+                return None
+            if "{" in lines[idx]:
+                return idx
+        return None
+
+    def _inline_cpp_definitions(self, text: str) -> str:
+        """Make .cpp definitions safe to include from multiple translation units."""
+
+        lines = text.splitlines(keepends=True)
+        result: list[str] = []
+        i = 0
+        brace_depth = 0
+        pending_template = False
+
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+
+            if brace_depth <= 1 and stripped.startswith("template"):
+                pending_template = True
+                result.append(line)
+                i += 1
+                continue
+
+            if brace_depth <= 1 and self._is_cpp_variable_definition(line):
+                result.append(self._prefix_inline(line))
+                brace_depth += line.count("{") - line.count("}")
+                pending_template = False
+                i += 1
+                continue
+
+            if brace_depth <= 1 and (pending_template or self._looks_like_cpp_function_start(line)):
+                block_end = self._find_cpp_function_block_end(lines, i)
+                if block_end is not None:
+                    result.append(self._prefix_inline(lines[i]))
+                    result.extend(lines[i + 1 : block_end + 1])
+                    for block_idx in range(i, block_end + 1):
+                        brace_depth += lines[block_idx].count("{") - lines[block_idx].count("}")
+                    pending_template = False
+                    i = block_end + 1
+                    continue
+
+            result.append(line)
+            brace_depth += line.count("{") - line.count("}")
+            if stripped and not stripped.startswith(("//", "/*", "*", "*/", "#")):
+                pending_template = False
+            i += 1
+
+        return "".join(result)
 
     def _is_project_file(self, path: Path) -> bool:
         resolved = path.resolve()

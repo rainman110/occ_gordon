@@ -22,11 +22,6 @@
 // Public API declarations.
 {{INLINE:src/occ_gordon/occ_gordon.h}}
 
-// Implementation is opt-in so this header can still be included from many TUs.
-#ifdef OCC_GORDON_IMPLEMENTATION
-
 {{INLINE_CPP_TREE:src}}
-
-#endif // OCC_GORDON_IMPLEMENTATION
 
 #endif // OCC_GORDON_SINGLE_HEADER_HPP
