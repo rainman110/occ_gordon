@@ -21,6 +21,8 @@ include(UseOpenCASCADE)
 
 add_subdirectory(src)
 
+include(cmake/SingleHeader.cmake)
+
 #create gtests, override gtest standard setting
 option(OCC_GORDON_BUILD_TESTS "Build occ_gordon Testsuite" OFF)
 
