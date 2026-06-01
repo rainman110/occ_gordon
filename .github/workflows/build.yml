@@ -3,6 +3,7 @@ name: Build process
 on:
   push:
     branches: ["main"]
+    tags: ["v*"]
   pull_request:
     branches: ["main"]
 
@@ -90,6 +91,28 @@ jobs:
           path: |
             build/tests/unittests/test-results
             build/tests/apitests/test-results
+
+  publish-single-header-release:
+    name: Publish single-header release asset
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: occ_gordon-single-header
+          path: release
+
+      - name: Publish single-header release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/occ_gordon_single.hpp
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   python-build:
     name: Python build
