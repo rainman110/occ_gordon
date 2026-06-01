@@ -54,7 +54,6 @@ If you want a single-header deployment, download the generated `occ_gordon_singl
 Use it like this:
 
 ```cpp
-#define OCC_GORDON_IMPLEMENTATION
 #include <occ_gordon_single.hpp>
 ```
 
