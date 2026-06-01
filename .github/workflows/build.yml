@@ -26,6 +26,7 @@ jobs:
           cache-downloads: true
           create-args: >-
             occt=7.9.3
+            python=3.11
             cmake
             ninja
             swig
@@ -39,6 +40,7 @@ jobs:
           -G Ninja
           -DBUILD_SHARED_LIBS=ON
           -DOCC_GORDON_BUILD_TESTS=ON
+          -DOCC_GORDON_BUILD_SINGLE_HEADER=ON
           -DOpenCASCADE_DIR="$CONDA_PREFIX/lib/cmake/opencascade"
           -DCMAKE_BUILD_TYPE=Release
 
