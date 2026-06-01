@@ -21,6 +21,12 @@ include(UseOpenCASCADE)
 
 add_subdirectory(src)
 
+option(OCC_GORDON_BUILD_SINGLE_HEADER "Build the generated single-header target and its validation test" OFF)
+
+if(OCC_GORDON_BUILD_SINGLE_HEADER)
+  include(cmake/SingleHeader.cmake)
+endif()
+
 #create gtests, override gtest standard setting
 option(OCC_GORDON_BUILD_TESTS "Build occ_gordon Testsuite" OFF)
 
