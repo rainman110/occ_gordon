@@ -48,6 +48,12 @@ jobs:
         shell: bash -el {0}
         run: cmake --build build --parallel
 
+      - name: Store single-header artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: occ_gordon-single-header
+          path: build/single_header/occ_gordon_single.hpp
+
       - name: Run unit tests
         shell: bash -el {0}
         working-directory: build/tests/unittests
