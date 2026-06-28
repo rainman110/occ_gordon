@@ -282,10 +282,11 @@ ProjectResult BSplineApproxInterp::projectOnCurve(const gp_Pnt& pnt, const Handl
     do { // Newton iteration to get a better t parameter
 
         // Get the derivatives of the spline wrt parameter t
-        gp_Vec p   = curve->DN(t, 0);
-        gp_Vec dp  = curve->DN(t, 1);
-        gp_Vec d2p = curve->DN(t, 2);
+        gp_Pnt p;
+        gp_Vec dp;
+        gp_Vec d2p;
 
+        curve->D2(t, p, dp, d2p);
 
         // compute objective function and their derivative
         f = pnt.SquareDistance(p.XYZ());
